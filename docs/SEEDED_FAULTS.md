@@ -187,3 +187,47 @@ FAILED tests/test_leakage.py::test_cnt_roll_14_at_named_date_is_correct_value
 1 failed, 7 passed in 0.95s
 
 ```
+
+## Exercise 2 — Fault 1: Forbidden feature
+
+Date: 2026-11-21
+
+**Seeded fault:** Modified `feature_columns()` in `src/features.py` to include `casual`, even though it belongs to `FORBIDDEN`.
+
+**Automatic detection:** Yes. Claude Code's PostToolUse hook ran after the edit and reported a failing leakage test.
+
+**Observed hook stderr (excerpt):**
+
+```text
+PostToolUse:Edit hook reported a problem
+AssertionError: forbidden columns in feature set: {'casual'}
+1 failed, 7 passed in 0.71s
+```
+
+**Test that caught it:** `test_no_forbidden_features`
+
+**Repair turns:** Pending.
+
+**Independent pytest failure:**
+
+```text
+.F......                                                                 [100%]
+=================================== FAILURES ===================================
+__________________________ test_no_forbidden_features __________________________
+
+feats =         dteday  instant  season  ...  cnt_lag_7   cnt_roll_7  cnt_roll_14
+0   2011-01-17     17.0  WINTER  ...     132....142857  2814.714286
+699 2012-12-31    731.0  WINTER  ...      920.0  1531.428571  2672.571429
+
+[700 rows x 29 columns]
+
+>   ???
+E   AssertionError: forbidden columns in feature set: {'casual'}
+E   assert not ({'atemp', 'casual', 'cnt_lag_1', 'cnt_lag_7', 'cnt_roll_14', 'cnt_roll_7', ...} & {'casual', 'cnt', 'cnt_2d_bfr', 'days_since_2011', 'instant', 'registered', ...})
+
+/Users/michaelluo/projects dsc180a/bikeshare-open/tests/test_leakage.py:31: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_leakage.py::test_no_forbidden_features - AssertionError: fo...
+1 failed, 7 passed in 1.51s
+
+```
