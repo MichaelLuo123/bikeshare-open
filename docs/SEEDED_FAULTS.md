@@ -253,7 +253,7 @@ Expected: 4240.714285714285
 
 **Test that caught it:** `test_rolling_mean_excludes_today`
 
-**Repair turns:** Pending.
+**Repair turns:** 1. Claude Code restored `.shift(1)` in one repair request. All 16 tests passed afterward.
 
 **Independent pytest failure:**
 

@@ -72,7 +72,7 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     # without it, cnt_roll_14 would contain today's count. -----------------
     out["cnt_lag_1"] = out[TARGET].shift(1)
     out["cnt_lag_7"] = out[TARGET].shift(7)
-    out["cnt_roll_7"] = out[TARGET].rolling(7).mean()
+    out["cnt_roll_7"] = out[TARGET].shift(1).rolling(7).mean()
     out["cnt_roll_14"] = out[TARGET].shift(1).rolling(LAG_WARMUP).mean()
 
     return out.dropna().reset_index(drop=True)
