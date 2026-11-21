@@ -37,7 +37,7 @@ No test-set evaluation was performed for these experiments as requested.
 
 ## Exercise 5: ridge vs persistence
 
-To be completed after Exercise 5.
+On the updated pipeline's validation set, Ridge outperformed persistence in both R² (0.6919 versus 0.4507) and MAE (763.2 versus 900.6), suggesting that it learns useful patterns beyond yesterday's ridership. However, the original starter pipeline's test results showed a much smaller R² advantage for Ridge of about 0.07, while persistence achieved a lower MAE of approximately 840 rides. These historical test results do not establish how the updated pipeline will perform. For daily bike-demand forecasting, MAE matters because it reflects the average size of prediction errors in rides. I would not deploy Ridge solely because of its higher R². Although its validation performance is promising, I would want to confirm that its improvements generalize to held-out data before choosing it over the simpler persistence baseline.
 
 ## Attribution
 
