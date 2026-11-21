@@ -335,7 +335,7 @@ FAILED tests/test_leakage.py::test_encode_weather_rejects_unknown_labels - Fa...
 1 failed, 8 passed in 0.62s
 ```
 
-**Repair turns:** 1 — a new test has been added to guard against this fault class; the seeded fault remains in place for further exercise.
+**Repair turns:** 1. After the new regression test failed, Claude Code restored the weather encoder's ValueError check. All 17 tests passed afterward.
 
 **Repair result:** Claude Code restored the original `raise ValueError(...)` statement in `encode_weather()` in one repair request. All 17 tests passed afterward.
 

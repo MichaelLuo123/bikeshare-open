@@ -39,3 +39,7 @@ rides) from calendar, weather, and lagged-demand features.
   cannot extrapolate to 2012. That is the headline result, not an error.
 - 2012-10-29 (Hurricane Sandy, 22 rides) is in the test set. Expect it in
   any residual plot.
+
+## Custom workflow rules
+- `cnt_roll_14` must use the previous 14 calendar days with `shift(1)` before rolling. Keep `LAG_WARMUP` consistent with the longest historical feature.
+- Use `/seed-fault <description>` for controlled fault testing. Capture real failures and restore the working implementation afterward.
