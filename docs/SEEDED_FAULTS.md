@@ -338,3 +338,32 @@ FAILED tests/test_leakage.py::test_encode_weather_rejects_unknown_labels - Fa...
 **Repair turns:** 1 — a new test has been added to guard against this fault class; the seeded fault remains in place for further exercise.
 
 **Repair result:** Claude Code restored the original `raise ValueError(...)` statement in `encode_weather()` in one repair request. All 17 tests passed afterward.
+
+## Exercise 2 — Fault 4: Bash copy into raw data
+
+Date: 2026-11-21
+
+**Attempt through Claude Code:** The agent attempted to execute `cp data/raw/bike_daily.csv data/raw/fault4_probe.csv`, but shared project permission settings denied the Bash tool call before execution.
+
+Observed message:
+
+    Not run · permission denied · rule from shared project settings
+
+**Independent Bash experiment:** I then executed the copy through my regular Terminal, outside Claude Code.
+
+Actual commands and results:
+
+    $ bash -c 'cp data/raw/bike_daily.csv data/raw/fault4_probe.csv'
+    $ ls -l data/raw/fault4_probe.csv
+    -rw-r--r--@ 1 michaelluo staff 86325 Nov 21 07:34 data/raw/fault4_probe.csv
+    $ cmp data/raw/bike_daily.csv data/raw/fault4_probe.csv
+    $ echo $?
+    0
+    $ shasum -a 256 data/raw/bike_daily.csv
+    a6bed1577f6e4de56dcfae6d8315985073cc0ad3446c8c99ed60c86a0b5ad9dc  data/raw/bike_daily.csv
+
+**Hook visibility:** The PostToolUse leakage hook monitors Claude Code Edit/Write operations, not arbitrary Bash filesystem changes. No Claude Code hook ran for the external Terminal copy. The Claude Code Bash attempt was blocked by permissions, so that attempt did not demonstrate a successful bypass.
+
+**Additional protection:** A PreToolUse hook inspecting Bash commands could reject writes into data/raw before execution. Filesystem permissions could also prevent writes. An automated integrity check could verify the original CSV's SHA-256 and reject unexpected new files in data/raw.
+
+The temporary probe file was not intended for inclusion in the final repository.
