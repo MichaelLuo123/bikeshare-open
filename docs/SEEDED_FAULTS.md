@@ -339,6 +339,32 @@ FAILED tests/test_leakage.py::test_encode_weather_rejects_unknown_labels - Fa...
 
 **Repair result:** Claude Code restored the original `raise ValueError(...)` statement in `encode_weather()` in one repair request. All 17 tests passed afterward.
 
+### Fault 3: Later manual hook verification
+
+After adding the weather-encoder regression test, I reproduced
+Fault 3 in a temporary copy and manually invoked the real
+PostToolUse hook using a simulated source-edit event.
+
+This was a later verification, not automatic hook detection
+during the original fault-seeding attempt.
+
+Actual hook exit code: 2
+
+Actual hook stderr excerpt:
+
+    Leakage tests failed after editing /var/folders/gl/bb5xpdbn5kq4_0kqfgqqp6sr0000gn/T/ma6-fault3-0tz7y91b/src/features.py:
+
+    __________________ test_encode_weather_rejects_unknown_labels __________________
+
+    E       Failed: DID NOT RAISE ValueError
+
+    FAILED tests/test_leakage.py::test_encode_weather_rejects_unknown_labels
+    1 failed, 8 passed in 0.58s
+
+The added regression test successfully detected the missing
+ValueError check. The temporary copy was deleted, and the
+original repository was not modified by this experiment.
+
 ## Exercise 2 — Fault 4: Bash copy into raw data
 
 Date: 2026-11-21
