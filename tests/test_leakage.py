@@ -64,3 +64,30 @@ def test_no_missing_values(feats):
 def test_dates_are_sorted_and_unique(feats):
     assert feats.dteday.is_monotonic_increasing
     assert feats.dteday.is_unique
+
+
+def test_cnt_roll_14_at_named_date_is_correct_value(feats):
+    """cnt_roll_14 at 2012-07-15 must equal mean of cnt for July 1 through July 14.
+
+    The feature must use exactly the 14 calendar days before the target date,
+    excluding the current day.
+    """
+    # Target date: 2012-07-15
+    target_date = pd.Timestamp("2012-07-15")
+
+    # Expected dates: exactly 14 prior calendar days (July 1 through July 14)
+    expected_dates = pd.date_range("2012-07-01", "2012-07-14", freq="D")
+
+    # Assert all required dates exist in the features dataframe
+    by_date = feats.set_index("dteday")
+    assert target_date in by_date.index, f"Target date {target_date.date()} not in features"
+    for d in expected_dates:
+        assert d in by_date.index, f"Required prior date {d.date()} not in features"
+
+    # Calculate expected value from independently sourced data (July 1-14)
+    expected = sum(by_date.loc[d, TARGET] for d in expected_dates) / len(expected_dates)
+
+    # Get actual value (will fail if cnt_roll_14 is not implemented)
+    actual = by_date.loc[target_date, "cnt_roll_14"]
+
+    assert actual == pytest.approx(expected), f"cnt_roll_14 at {target_date.date()} has wrong value: got {actual}, expected {expected}"
