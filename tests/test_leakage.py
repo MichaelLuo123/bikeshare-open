@@ -91,3 +91,17 @@ def test_cnt_roll_14_at_named_date_is_correct_value(feats):
     actual = by_date.loc[target_date, "cnt_roll_14"]
 
     assert actual == pytest.approx(expected), f"cnt_roll_14 at {target_date.date()} has wrong value: got {actual}, expected {expected}"
+
+
+def test_encode_weather_rejects_unknown_labels():
+    """encode_weather() must raise ValueError for unknown weather labels.
+
+    This guards against silently dropping rows (like 20 BAD-weather days)
+    when the input contains unmapped values such as "STORMY".
+    """
+    from src.features import encode_weather
+
+    series_with_unknown = pd.Series(["GOOD", "MISTY", "STORMY"])
+
+    with pytest.raises(ValueError, match="unmapped weather labels"):
+        encode_weather(series_with_unknown)

@@ -280,3 +280,59 @@ E     Expected: 4240.714285714285 ± 0.00424071
 FAILED tests/test_leakage.py::test_rolling_mean_excludes_today - assert np.fl...
 1 failed, 7 passed in 1.82s
 ```
+
+## Exercise 2 — Fault 3: Silent drop on unknown weather labels
+
+Date: 2026-11-21
+
+**Seeded fault:** Removed `raise ValueError(f"unmapped weather labels: {sorted(unknown)}")` from `encode_weather()` in `src/features.py`, replacing it with `pass`. This allows unknown weather labels (e.g., "STORMY") to silently become NaN instead of raising an error.
+
+**Automatic detection:** No. The original PostToolUse hook did not report any failure. All 8 existing leakage tests passed with `8 passed in 0.80s`.
+
+This fault exposes a gap in the verification suite: while `encode_weather()` still runs and produces output, unknown labels silently become NaN without warning. No existing test verified that unknown labels trigger an explicit error.
+
+**Detection method:** A new regression test was added to `tests/test_leakage.py` using `pytest.raises(ValueError)`. This guard catches any attempt to pass unmapped weather labels:
+
+```python
+def test_encode_weather_rejects_unknown_labels():
+    """encode_weather() must raise ValueError for unknown weather labels.
+
+    This guards against silently dropping rows when the input contains
+    unmapped values such as "STORMY".
+    """
+    from src.features import encode_weather
+
+    series_with_unknown = pd.Series(["GOOD", "MISTY", "STORMY"])
+
+    with pytest.raises(ValueError, match="unmapped weather labels"):
+        encode_weather(series_with_unknown)
+```
+
+**New test detecting the fault (with actual pytest output):**
+
+```text
+........F                                                                [100%]
+=================================== FAILURES ===================================
+__________________ test_encode_weather_rejects_unknown_labels __________________
+
+    def test_encode_weather_rejects_unknown_labels():
+        """encode_weather() must raise ValueError for unknown weather labels.
+
+        This guards against silently dropping rows (like 20 BAD-weather days)
+        when the input contains unmapped values such as "STORMY".
+        """
+        from src.features import encode_weather
+
+        series_with_unknown = pd.Series(["GOOD", "MISTY", "STORMY"])
+
+>       with pytest.raises(ValueError, match="unmapped weather labels"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_leakage.py:106: Failed
+=========================== short test summary info ============================
+FAILED tests/test_leakage.py::test_encode_weather_rejects_unknown_labels - Fa...
+1 failed, 8 passed in 0.62s
+```
+
+**Repair turns:** Pending — a new test has been added to guard against this fault class; the seeded fault remains in place for further exercise.
