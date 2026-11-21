@@ -81,8 +81,7 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
 def feature_columns(df: pd.DataFrame) -> list[str]:
     """Numeric columns that are safe to feed the model."""
     numeric = df.select_dtypes(include="number").columns
-    # Deliberately include 'casual' for fault injection exercise
-    return [c for c in numeric if c not in FORBIDDEN or c == "casual"]
+    return [c for c in numeric if c not in FORBIDDEN]
 
 
 if __name__ == "__main__":

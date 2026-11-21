@@ -206,7 +206,7 @@ AssertionError: forbidden columns in feature set: {'casual'}
 
 **Test that caught it:** `test_no_forbidden_features`
 
-**Repair turns:** Pending.
+**Repair turns:** 1. Claude Code restored the FORBIDDEN filter in one repair request. All 8 leakage tests and all 16 tests in the full suite passed after repair.
 
 **Independent pytest failure:**
 
