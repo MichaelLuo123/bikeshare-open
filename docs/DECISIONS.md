@@ -8,3 +8,5 @@ Agents append here via the `/new-feature` skill; you append here by hand.
 - Exclude `instant`, `yr`, `days_since_2011`: time indexes let a tree predict a flat constant past 2011 and a linear model extrapolate a trend we have no grounds for.
 - Split 2011 / H1 2012 / H2 2012 by date. Test set touched once, after all feature work.
 - Report mean and persistence baselines with every score. Persistence (test R^2 0.510, MAE 840) is within 0.07 R^2 of ridge and beats it on MAE; that caveat goes in the report.
+
+- 2026-11-21 — Keep `cnt_roll_14`, the mean demand over the previous 14 calendar days. It is available at prediction time because `shift(1)` excludes the current day's target before the rolling mean is computed. Ridge validation R² improved from 0.6475 to 0.6919 (+0.0444), and MAE decreased from 832.9 to 763.2. On identical training rows, Ridge R² improved from 0.6434 to 0.6919 (+0.0485). HGB validation R² worsened from 0.2185 to 0.1643 (-0.0542). Keep the feature because its benefit to Ridge outweighs the small controlled degradation for HGB; the 14-day warmup also reduces training rows.

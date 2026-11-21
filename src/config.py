@@ -53,3 +53,18 @@ VALID_END = "2012-06-30"
 # have no complete history and are dropped; tests/test_contract.py uses this
 # to bound how many rows may legitimately disappear.
 LAG_WARMUP = 14
+
+# Approved input columns from the raw CSV.
+# Any other raw column must be explicitly classified before use.
+RAW_FEATURE_COLS = {
+    "season",
+    "mnth",
+    "holiday",
+    "weekday",
+    "temp",
+    "atemp",
+    "hum",
+    "windspeed",
+    "workday",
+    "weather",
+}
