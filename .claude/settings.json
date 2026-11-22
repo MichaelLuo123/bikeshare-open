@@ -30,7 +30,6 @@
       "Bash(git status)"
     ],
     "deny": [
-      "Write(./data/raw/**)",
       "Edit(./data/raw/**)",
       "Bash(rm -rf:*)"
     ]
