@@ -2,26 +2,51 @@
 
 ## Results
 
-I added `cnt_roll_14`, which calculates average bike demand over the previous 14 calendar days. The feature uses `shift(1)` to exclude the prediction day's count and prevent target leakage. I also increased `LAG_WARMUP` from 7 to 14.
+I added `cnt_roll_14`, the average demand over the previous 14
+calendar days. The feature uses `shift(1)` before rolling, so the
+current day's target is excluded. I increased `LAG_WARMUP` from
+7 to 14. Training rows decreased from 348 to 334, while validation
+and test contain 182 and 184 days, respectively.
 
-### Validation results
+### Before-and-after model results
 
-| Model | Original R² | Updated R² | Change |
-|---|---:|---:|---:|
-| Mean baseline | -0.9318 | -0.8583 | +0.0735 |
-| Persistence | 0.4507 | 0.4507 | 0.0000 |
-| Ridge | 0.6475 | 0.6919 | +0.0444 |
-| Gradient boosting | 0.2185 | 0.1643 | -0.0542 |
+| Feature set | Model | Valid R² | Valid MAE | Test R² | Test MAE |
+|---|---|---:|---:|---:|---:|
+| Before | Mean baseline | -0.9318 | 2002.2 | -2.1441 | 2847.7 |
+| Before | Persistence | 0.4507 | 900.6 | 0.5099 | 840.1 |
+| Before | Ridge | 0.6475 | 832.9 | 0.5833 | 947.1 |
+| Before | HGB | 0.2185 | 1296.6 | -0.4975 | 1972.6 |
+| After | Mean baseline | -0.8583 | 1965.6 | -2.0333 | 2793.1 |
+| After | Persistence | 0.4507 | 900.6 | 0.5099 | 840.1 |
+| After | Ridge | 0.6919 | 763.2 | 0.6268 | 870.9 |
+| After | HGB | 0.1643 | 1341.2 | -0.6534 | 2087.9 |
 
-Ridge validation MAE decreased from 832.9 to 763.2. Because the longer warmup reduced the training set from 348 to 334 rows, I also compared models with and without the feature using identical training and validation rows.
+Ridge improved on both splits. Validation R² increased from
+0.6475 to 0.6919 and MAE decreased from 832.9 to 763.2.
+Test R² increased from 0.5833 to 0.6268, while test MAE
+decreased from 947.1 to 870.9. HGB worsened on both splits.
 
-On identical rows, Ridge R² increased from 0.6434 to 0.6919 (+0.0485), while gradient boosting R² decreased from 0.1713 to 0.1643 (-0.0070). I decided to keep the feature because it substantially improved Ridge's validation performance.
-
-Final test-set results will be recorded after feature and model experiments are complete.
+Because the longer warmup also changed the training rows, I ran
+a validation-only ablation on identical rows. Ridge R² improved
+from 0.6434 to 0.6919 (+0.0485), while HGB R² decreased from
+0.1713 to 0.1643 (-0.0070). I kept `cnt_roll_14` because its
+benefit to Ridge outweighed the small controlled HGB degradation.
 
 ## Headline finding
 
-The 14-day rolling demand feature improved Ridge's validation performance but did not improve gradient boosting. The controlled comparison suggests Ridge benefits from the additional demand history rather than merely from the shorter training period.
+A naive model using `casual` and `registered` can achieve
+a perfect R² of 1.000 because those columns sum to the target.
+That is leakage, not a valid forecast. With an honest temporal
+split (2011 training, H1 2012 validation, H2 2012 test), the
+updated pipeline's test R² scores were -2.0333 for the mean
+baseline, 0.5099 for persistence, 0.6268 for Ridge, and -0.6534
+for HGB. HGB struggled to extrapolate the growing demand,
+although it still beat the mean baseline. Ridge beat persistence
+by 0.1169 test R², but persistence had a lower MAE (840.1 versus
+870.9 rides). Adding `cnt_roll_14` improved Ridge test R² from
+0.5833 to 0.6268 and reduced its MAE from 947.1 to 870.9;
+HGB's test performance declined. I kept the feature for its
+demonstrated benefit to Ridge while acknowledging the tradeoff.
 
 ## Exercise 4: target transformation
 
@@ -37,12 +62,41 @@ No test-set evaluation was performed for these experiments as requested.
 
 ## Exercise 5: ridge vs persistence
 
-On the updated pipeline's validation set, Ridge outperformed persistence in both R² (0.6919 versus 0.4507) and MAE (763.2 versus 900.6), suggesting that it learns useful patterns beyond yesterday's ridership. However, the original starter pipeline's test results showed a much smaller R² advantage for Ridge of about 0.07, while persistence achieved a lower MAE of approximately 840 rides. These historical test results do not establish how the updated pipeline will perform. For daily bike-demand forecasting, MAE matters because it reflects the average size of prediction errors in rides. I would not deploy Ridge solely because of its higher R². Although its validation performance is promising, I would want to confirm that its improvements generalize to held-out data before choosing it over the simpler persistence baseline.
+On the final updated pipeline, Ridge achieved higher
+test R² than persistence (0.6268 versus 0.5099, a difference
+of 0.1169), but persistence had lower test MAE (840.1 versus
+870.9 rides, a 30.8-ride advantage). Ridge also beat persistence
+on both validation metrics, indicating that it learns useful
+patterns beyond yesterday's ridership. The original starter
+pipeline showed a smaller test R² advantage of 0.0734 for Ridge,
+with MAE of 947.1 versus persistence's 840.1. The new feature
+substantially narrowed that error gap without reversing it.
+For daily bike-demand planning, average error in rides is
+operationally meaningful, and persistence is simpler to
+maintain. I would favor persistence for deployment unless
+further operational evaluation shows that Ridge's stronger R²
+provides a practical benefit, such as reducing costly large errors.
 
 ## Attribution
 
-Model used: `bikeshare-coder` (Qwen3.5:9b through local Ollama and Claude Code).
+Model used: `bikeshare-coder` (Qwen3.5:9b, 64k context), running locally through Ollama and Claude Code. I did not switch agent models during the assignment.
 
-Claude Code assisted with feature implementation. I reviewed the proposed edits, ran tests, and evaluated validation performance. ChatGPT provided guidance on implementation checks, experiment commands, and documentation.
+**Work performed with Claude Code:**
+- Implemented the `cnt_roll_14` feature in `src/features.py` and updated `LAG_WARMUP` in `src/config.py`.
+- Developed and ran leakage tests in `tests/test_leakage.py`, including the named-date test for the new feature.
+- Introduced the three required seeded faults involving forbidden features, rolling-window leakage, and weather encoding.
+- Investigated test failures, repaired the seeded faults, and added a regression test for unknown weather labels after the original tests failed to detect that fault.
+- Assisted with documenting fault experiments and their outcomes in `docs/SEEDED_FAULTS.md`.
+- Helped investigate target transformations and prepare the Exercise 4 discussion in `REPORT.md`.
 
-Additional attribution details will be added as the remaining exercises are completed.
+**Methodological decisions I made:**
+- Retained the starter's leakage exclusions, temporal data split, and mean and persistence baselines.
+- Kept `cnt_roll_14` because it improved Ridge's validation performance, despite reducing HGB's performance.
+- Evaluated residual and relative-demand target transformations and decided to keep the final pipeline untransformed.
+- Chose not to recommend deploying Ridge solely on its higher R² because persistence achieved lower test MAE.
+- Strengthened the weather-encoder verification after discovering that the original tests did not catch the missing error check.
+- Created the `/seed-fault` skill to standardize the fault-testing workflow.
+
+Additional AI assistance was used to draft experiment scripts and report text, which I executed, reviewed, and verified.
+
+I reviewed the code changes, verified the experimental results, and made the final decisions about the methodology and interpretation.
