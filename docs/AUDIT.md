@@ -97,3 +97,11 @@ Alternatively, duplicate test_only_expected_rows_are_dropped from tests/test_con
 ## My Verdict
 
 I disagree with Finding #5 because `src/train.py` already computes and reports both the mean and persistence baselines, including their validation and test R² and MAE in `reports/metrics.json`. The training script also prints these results, so the auditor's proposed fix would only change their presentation, not the reported numbers. I partially agree with Finding #4: `src/features.py` uses `dropna()` without an inline assertion, but `tests/test_contract.py` already contains `test_only_expected_rows_are_dropped`, which bounds row loss based on the lag warm-up period and missing calendar days. An inline check could strengthen protection, but the auditor did not establish that unexpected row loss occurred or affected the reported metrics. Overall, neither finding demonstrates an incorrect numerical result or invalidates the current conclusions.
+
+## Own-Repository SDK Audit
+
+I attempted the original `python agent/audit.py . --out reports/audit.jsonl` command, but it did not complete with the local `bikeshare-coder` model. I therefore used a two-stage Claude Agent SDK workaround: a tool-enabled inspection of my repository, including the custom identity checker, followed by a tool-free schema-constrained SDK call. The resulting output is saved in `reports/audit.jsonl`.
+
+The audit reported no leakage in the actual model features, a correct temporal split, both required baselines, and reproducibility. It returned no findings.
+
+One sentence in the generated audit memo incorrectly compared Ridge's test R² of approximately 0.63 as lower than persistence's 0.51. The correct comparison is 0.6268 > 0.5099; however, persistence has lower test MAE (840.1 versus 870.9). The correct interpretation is documented in REPORT.md.
